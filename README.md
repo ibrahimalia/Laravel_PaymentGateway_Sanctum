@@ -1,3 +1,3 @@
 # Laravel_PaymentGateway_Sanctum
 A simple Laravel project that contains an implementation of package sanctum and also has a payment system with myFatoorah gateway and admin dashboard templete blade type ,
-and use roles and permission by spatie package
+and use roles and permissions by spatie package
