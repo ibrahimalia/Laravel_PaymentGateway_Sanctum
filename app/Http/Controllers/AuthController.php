@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Services\FatoorahServices;
+use App\Models\Cart;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 class AuthController extends Controller
 {
     private $fatoorahServices;
@@ -35,7 +37,7 @@ class AuthController extends Controller
         $filed = $request->validate([
             'name'=>'required|string',
             'email' =>'required|string|email',
-            'password' => 'required|string|confirmed'
+            'password' => 'required|string'
         ]) ;
         $user= User::create([
             'name'=>$filed['name'],
@@ -43,6 +45,7 @@ class AuthController extends Controller
             'password'=>Hash::make($filed['password']),
         ]);
         $token = $user->createToken("myToken")->plainTextToken;
+        $user->assignRole($request->roles);
         $response= [
             'user'=>$user,
             'token'=>$token
@@ -59,7 +62,7 @@ class AuthController extends Controller
     /*                  END                         */
 
     /*                 Start                         */
-    
+
     //payment section
     public function payorder(){
            $data = [
@@ -89,4 +92,52 @@ class AuthController extends Controller
     public function error(Request $request){
            return response()->json(['errors'=>'something wrong ...']);
     }
+
+    /* cart products */
+    public function addCarts(Request $request){
+        $products = Cart::create([
+            "data" =>json_encode($request->data)
+        ]);
+        return response()->json(["data"=>json_decode($products->data)]);
+    }
+    /*spatie permission*/
+    public function addRoles(Request $request){
+        if (!$request->roles) {
+            return response()->json(['error'=>"add role in body"],500);
+        }else{
+
+            foreach($request->roles as $role){
+                Role::create(['name' => $role]);
+            };
+            return response()->json(['success'=>"add role in body"],200);
+        }
+    }
+public function user(Request $request){
+    return response()->json(['data'=>'test ...']);
 }
+public function addpermissions(Request $request){
+    if (!$request->permission) {
+        return response()->json(['error'=>"add role in body"],500);
+    }else{
+        foreach ($request->permission as $permission) {
+
+            Permission::create(['name'=>$permission]);
+        }
+        return response()->json(['success'=>"add role in body"],200);
+    }
+}
+public function updatepermissions(Request $request,$id){
+    Permission::where("id",$id)->update(["name"=>$request->permission]);
+    return response()->json(['success'=>"update role"],200);
+
+}
+public function assignPermissionToRole(Request $request){
+    $roles =Role::where("name",$request->role)->first();
+    // $per =Permission::where("name",$request->permission)->get();
+
+    $roles->givePermissionTo($request->permission);
+    return response()->json(['success'=>"add permission to role"],200);
+}
+
+}
+
